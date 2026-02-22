@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sidebar';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Bot, Globe, Languages, LayoutGrid, Map, Route, Scan, Users } from 'lucide-react';
+import { Bot, Globe, Languages, LayoutGrid, Route, Scan, Users } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const navItems = [
@@ -20,7 +20,6 @@ const navItems = [
   { href: '/phrasebook', label: 'Phrasebook', icon: <Languages /> },
   { href: '/ar-scanner', label: 'AR Scanner', icon: <Scan /> },
   { href: '/community', label: 'Community', icon: <Users /> },
-  { href: '/map', label: 'Map', icon: <Map /> },
 ];
 
 export function SidebarNav() {

@@ -10,7 +10,6 @@ import {
   Globe,
   Languages,
   LayoutGrid,
-  Map,
   MoveUpRight,
   Route,
   Scan,
@@ -50,12 +49,6 @@ const features = [
     description: 'Share and explore travel stories from our community.',
     href: '/community',
     icon: <Users className="size-8 text-primary" />,
-  },
-  {
-    title: 'Interactive Map',
-    description: 'Find attractions, restaurants, and more.',
-    href: '/map',
-    icon: <Map className="size-8 text-primary" />,
   },
 ];
 
