@@ -264,14 +264,12 @@ export default function ItineraryGeneratorPage() {
                             <p className="font-semibold flex items-center gap-2"><Clock className="size-4 text-muted-foreground"/> {activity.time}</p>
                             <p className="mt-1">{activity.description}</p>
                             {activity.location && <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1"><MapPin className="size-3"/>{activity.location}</p>}
-                            {activity.recommendations && activity.recommendations.length > 0 && (
+                            {activity.recommendations && (
                                 <div className="mt-2 text-sm bg-accent/20 p-2 rounded-md">
                                     <h4 className="font-semibold flex items-center gap-1"><Sparkles className="size-3 text-accent"/> Recommendations</h4>
-                                    <ul className="list-disc list-inside mt-1 space-y-1">
-                                        {activity.recommendations.map((rec, recIndex) => (
-                                            <li key={recIndex}>{rec}</li>
-                                        ))}
-                                    </ul>
+                                    <div className="mt-1 whitespace-pre-wrap">
+                                        {activity.recommendations}
+                                    </div>
                                 </div>
                             )}
                           </div>

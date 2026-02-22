@@ -32,7 +32,7 @@ const GeneratePersonalizedItineraryOutputSchema = z.object({
           time: z.string().describe('The time of the activity (e.g., "Morning", "10:00 AM", "Evening").'),
           description: z.string().describe('A detailed description of the activity.'),
           location: z.string().optional().describe('The specific location of the activity, if applicable.'),
-          recommendations: z.array(z.string()).optional().describe('Additional recommendations related to the activity (e.g., "best restaurant nearby", "local tip").'),
+          recommendations: z.string().optional().describe('Additional recommendations related to the activity (e.g., "best restaurant nearby", "local tip"), formatted as a markdown list.'),
         })
       ).describe('A list of activities planned for this day.'),
     })
