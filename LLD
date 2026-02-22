@@ -1,0 +1,136 @@
+# WanderWise Application - Low-Level Design (LLD)
+
+## 1. Introduction
+
+This document provides a detailed low-level design for the WanderWise application. WanderWise is an AI-powered travel companion designed to simplify trip planning and enhance the travel experience through a suite of intelligent features.
+
+## 2. Architecture Overview
+
+WanderWise is a modern web application built on a serverless, Jamstack-like architecture.
+
+-   **Front-End:** A Next.js (React) single-page application (SPA) that provides a rich, interactive user interface. It leverages Server Components for performance and fetches data from the AI backend via Server Actions.
+-   **AI Backend:** A series of serverless functions (Genkit Flows) that orchestrate calls to the Google Gemini large language model. This backend handles all generative AI tasks.
+-   **Styling:** A utility-first approach using Tailwind CSS, with a component library powered by ShadCN/UI for a consistent and modern design system.
+-   **Hosting:** The entire application is deployed and hosted on Firebase App Hosting, which provides a scalable, secure, and globally distributed environment.
+
+### Technology Stack
+
+| Layer      | Technology                                    | Purpose                                                 |
+| ---------- | --------------------------------------------- | ------------------------------------------------------- |
+| Front-End  | Next.js 14+ (App Router), React 19, TypeScript | UI framework, routing, server-side rendering          |
+| AI         | Genkit, Google Gemini (Gemini 2.5 Flash)      | Orchestrating AI tasks, generative capabilities       |
+| UI         | ShadCN/UI, Tailwind CSS, Lucide React Icons   | Component library, styling, iconography               |
+| Forms      | React Hook Form, Zod                          | Client-side form management and validation              |
+| Hosting    | Firebase App Hosting                          | Scalable, serverless deployment and global CDN          |
+| Language   | TypeScript                                    | Type safety across the entire application               |
+
+---
+
+## 3. Front-End Component Breakdown
+
+The front-end is organized into pages, reusable UI components, and layout components.
+
+### 3.1. Core Layout & Navigation
+
+-   **`src/app/layout.tsx`**: The root layout for the entire application. It sets up the HTML shell, includes the global stylesheet (`globals.css`), and wraps the application in the `SidebarProvider`.
+-   **`src/components/ui/sidebar.tsx`**: A highly configurable sidebar component. It manages its own state (expanded/collapsed) and handles mobile-responsive behavior by rendering as a sheet menu.
+-   **`src/components/layout/sidebar-nav.tsx`**: Contains the primary navigation links for the application. It uses the `usePathname` hook to highlight the active link.
+
+### 3.2. Pages (`src/app/*`)
+
+-   **`page.tsx` (Home):** The main landing page. It displays a hero section with a background image and a grid of `Card` components that link to the main features of the app.
+-   **`itinerary-generator/page.tsx`**:
+    -   **Functionality:** Allows users to generate a personalized travel itinerary.
+    -   **Components:** Uses a two-column layout. The left column contains a form built with `react-hook-form` and ShadCN `Input`, `Select`, and `Checkbox` components. The right column displays the generated itinerary in a nested `Accordion` component, or a loading/initial state message.
+    -   **State:** Manages form input, loading status (`isLoading`), and the itinerary result (`itinerary`).
+-   **`travel-assistant/page.tsx`**:
+    -   **Functionality:** A chat interface for asking travel-related questions.
+    -   **Components:** Uses a `Card` to encapsulate the chat. A `ScrollArea` displays the message history. The input form is at the bottom.
+    -   **State:** Manages an array of `messages`, each with a `role` ('user' or 'assistant') and `content`.
+-   **`phrasebook/page.tsx`**:
+    -   **Functionality:** Translates user-input phrases into a selected language.
+    -   **Components:** A central `Card` contains a `Textarea` for input and a `Select` for language choice. The result is displayed below. It includes a `Button` to trigger the browser's Web Speech API for text-to-speech.
+    -   **State:** Manages the `translation` result object and `isLoading` status.
+-   **`ar-scanner/page.tsx`**:
+    -   **Functionality:** A UI demonstration of an AR landmark scanner. This is a client-side component that simulates a scanning animation and displays a `Dialog` with information.
+    -   **State:** Manages `isScanning` and `showInfo` booleans.
+-   **`community/page.tsx`**:
+    -   **Functionality:** Displays a static feed of community travel posts.
+    -   **Components:** A grid of `Card` components, each containing an `Image`, user `Avatar`, and caption.
+
+### 3.3. UI Components (`src/components/ui/`)
+
+This directory contains all the ShadCN/UI components. These are unstyled, accessible base components that are styled using Tailwind CSS classes. Examples include `Button`, `Card`, `Input`, `Dialog`, `Accordion`, etc.
+
+---
+
+## 4. AI Backend (Genkit Flows)
+
+The core AI logic is encapsulated in Genkit flows, which are TypeScript files located in `src/ai/flows/`. They are defined as server-side modules (`'use server'`).
+
+### 4.1. Genkit Configuration
+
+-   **`src/ai/genkit.ts`**: This file initializes and configures the global Genkit instance. It registers the `googleAI` plugin and sets the default model to `googleai/gemini-2.5-flash`.
+
+### 4.2. Flows
+
+-   **`generate-personalized-itinerary.ts`**:
+    -   **Purpose:** To generate a structured travel itinerary.
+    -   **Input:** `GeneratePersonalizedItineraryInput`, a Zod schema defining `destination`, `dates`, `interests`, etc.
+    -   **Process:**
+        1.  Receives user preferences as a typed object.
+        2.  Calls the `generatePersonalizedItineraryPrompt`.
+        3.  The prompt instructs the Gemini model to act as a travel agent and, critically, to structure its output according to the `GeneratePersonalizedItineraryOutput` Zod schema.
+    -   **Output:** A promise that resolves to a structured JSON object matching the output schema.
+-   **`get-travel-recommendations.ts`**:
+    -   **Purpose:** To answer user questions in the Travel Assistant chat.
+    -   **Input:** `GetTravelRecommendationsInput` (destination, question).
+    -   **Process:** Calls a prompt that instructs the model to act as a helpful travel assistant named "WanderWise" and answer the user's `question` in the context of the `destination`.
+    -   **Output:** A promise resolving to a JSON object with a single `answer` string.
+-   **`translate-travel-phrases.ts`**:
+    -   **Purpose:** To power the Phrasebook feature.
+    -   **Input:** `TranslateTravelPhraseInput` (phrase, targetLanguage).
+    -   **Process:** Calls a simple prompt that asks the model to translate the given `phrase` into the `targetLanguage`.
+    -   **Output:** A promise resolving to a JSON object with the `translatedPhrase`.
+
+---
+
+## 5. Data Flow
+
+### 5.1. Itinerary Generation Data Flow
+
+1.  **User (`Client`)** fills the form in `itinerary-generator/page.tsx`.
+2.  On submit, the `onSubmit` handler is triggered.
+3.  **`page.tsx` (`Client`)** calls the exported `generatePersonalizedItinerary` function, passing the validated form data.
+4.  **Next.js (`Server`)** routes this call to the `generate-personalized-itinerary.ts` server module.
+5.  The **`generatePersonalizedItineraryFlow` (`Server`)** is executed.
+6.  The flow calls the **Google Gemini API (`External`)** with the dynamically generated prompt.
+7.  Gemini returns a structured JSON response.
+8.  The flow returns the JSON to the client component.
+9.  **`page.tsx` (`Client`)** updates its state (`setItinerary(result)`), causing React to re-render and display the itinerary.
+
+### 5.2. Environment Variables
+
+-   **`.env`**: This file, located at the project root, is used to store environment variables.
+-   **`GEMINI_API_KEY`**: The only required variable, which holds the API key for authenticating with the Google Gemini API. This file is listed in `.gitignore` and should never be committed to source control.
+
+---
+
+## 6. Styling and Theming
+
+-   **`src/app/globals.css`**: Defines the global styles and CSS variables for the application's theme. It uses HSL color values for light and dark modes (e.g., `--background`, `--primary`, `--accent`).
+-   **`tailwind.config.ts`**: Configures Tailwind CSS. It extends the default theme to use the CSS variables defined in `globals.css`, ensuring that Tailwind's utility classes (`bg-background`, `text-primary`, etc.) are mapped to the application's theme.
+-   **Fonts:** The `Lato` font is imported from Google Fonts in `src/app/layout.tsx` and configured in `tailwind.config.ts`.
+
+---
+
+## 7. Deployment
+
+-   **`apphosting.yaml`**: The configuration file for Firebase App Hosting. It specifies the runtime environment and settings like instance scaling (`maxInstances`).
+-   **`next.config.ts`**: The standard Next.js configuration file. It includes settings for image optimization (defining allowed remote hostnames for `next/image`).
+-   **Process:**
+    1.  A developer runs `firebase deploy`.
+    2.  Firebase CLI reads `apphosting.yaml` and initiates a deployment.
+    3.  On the Google Cloud backend, the build process installs dependencies (`npm install`) and runs the production build (`next build`).
+    4.  The optimized output is packaged into a container and deployed to a managed, serverless environment.
+    5.  The live application is served globally via the Firebase CDN.
